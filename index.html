@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nano Banana - AI 图像生成器</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header>
+            <div class="header-content">
+                <h1>🍌 Nano Banana</h1>
+                <div class="header-controls">
+                    <button id="themeToggle" class="btn-icon" title="切换主题">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                    <button id="settingsBtn" class="btn-icon" title="设置">⚙️</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main>
+            <div class="main-grid">
+                <!-- 左侧面板 - 生成控制 -->
+                <div class="panel control-panel">
+                    <h2>生成设置</h2>
+
+                    <!-- 提示词输入 -->
+                    <div class="form-group">
+                        <label for="prompt">提示词</label>
+                        <div class="prompt-input-wrapper">
+                            <textarea
+                                id="prompt"
+                                placeholder="描述你想生成的图像..."
+                                rows="4"
+                            ></textarea>
+                            <button id="savePromptBtn" class="btn-icon-small" title="收藏此提示词">⭐</button>
+                        </div>
+                    </div>
+
+                    <!-- 负向提示词 -->
+                    <div class="form-group">
+                        <label for="negativePrompt">负向提示词</label>
+                        <textarea
+                            id="negativePrompt"
+                            placeholder="不想出现的内容..."
+                            rows="2"
+                        ></textarea>
+                    </div>
+
+                    <!-- 图片尺寸 -->
+                    <div class="form-group">
+                        <label for="imageSize">图片尺寸</label>
+                        <select id="imageSize">
+                            <option value="512x512">512 x 512</option>
+                            <option value="768x768">768 x 768</option>
+                            <option value="1024x1024" selected>1024 x 1024</option>
+                            <option value="1024x768">1024 x 768 (横向)</option>
+                            <option value="768x1024">768 x 1024 (纵向)</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+
+                    <!-- 自定义尺寸 -->
+                    <div id="customSizePanel" class="form-group" style="display: none;">
+                        <div class="custom-size-grid">
+                            <div>
+                                <label for="customWidth">宽度</label>
+                                <input type="number" id="customWidth" min="256" max="2048" value="1024" step="64">
+                            </div>
+                            <div>
+                                <label for="customHeight">高度</label>
+                                <input type="number" id="customHeight" min="256" max="2048" value="1024" step="64">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 参考图片上传 -->
+                    <div class="form-group">
+                        <label for="uploadArea">参考图片 (可选)</label>
+                        <div id="uploadArea" class="upload-area">
+                            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                            <div class="upload-prompt">
+                                <span class="upload-icon">📁</span>
+                                <p>点击上传或从 Photoshop 粘贴 (Ctrl+V)</p>
+                            </div>
+                            <img id="previewImage" style="display: none;" alt="预览">
+                        </div>
+                    </div>
+
+                    <!-- 生成按钮 -->
+                    <button id="generateBtn" class="btn-primary">
+                        <span id="generateBtnText">生成图像</span>
+                    </button>
+                </div>
+
+                <!-- 右侧面板 - 结果显示 -->
+                <div class="panel result-panel">
+                    <h2>生成结果</h2>
+
+                    <div id="resultArea" class="result-area">
+                        <div class="result-placeholder">
+                            <span class="placeholder-icon">🖼️</span>
+                            <p>生成的图像将显示在这里</p>
+                        </div>
+                    </div>
+
+                    <div id="resultActions" class="result-actions" style="display: none;">
+                        <button id="copyToClipboardBtn" class="btn-secondary">复制到剪贴板 (发送到PS)</button>
+                        <button id="downloadBtn" class="btn-secondary">下载图片</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页 -->
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="favorites">收藏的提示词</button>
+                    <button class="tab-btn" data-tab="history">历史记录</button>
+                </div>
+
+                <!-- 收藏的提示词 -->
+                <div id="favoritesTab" class="tab-content active">
+                    <div id="favoritesList" class="favorites-list">
+                        <p class="empty-message">暂无收藏的提示词</p>
+                    </div>
+                </div>
+
+                <!-- 历史记录 -->
+                <div id="historyTab" class="tab-content">
+                    <div id="historyList" class="history-list">
+                        <p class="empty-message">暂无历史记录</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 设置模态框 -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>设置</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="apiBaseUrl">API 基础 URL</label>
+                    <input
+                        type="text"
+                        id="apiBaseUrl"
+                        placeholder="https://api.openai.com/v1"
+                        value="https://api.openai.com/v1"
+                    >
+                    <small>支持第三方 API 中转服务</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="apiKey">API Key</label>
+                    <input
+                        type="password"
+                        id="apiKey"
+                        placeholder="sk-..."
+                    >
+                    <small>您的 API 密钥会安全存储在本地</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="modelName">模型名称</label>
+                    <input
+                        type="text"
+                        id="modelName"
+                        placeholder="dall-e-3"
+                        value="dall-e-3"
+                    >
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveSettingsBtn" class="btn-primary">保存设置</button>
+                <button class="modal-close btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
