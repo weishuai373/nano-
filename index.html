@@ -3,8 +3,751 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nano Banana - AI 图像生成器</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>🍌 Nano Banana - AI 图像生成器</title>
+    <style>
+/* ===== 基础样式和变量 ===== */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --border-color: #dee2e6;
+    --shadow: rgba(0, 0, 0, 0.08);
+    --shadow-hover: rgba(0, 0, 0, 0.16);
+    --accent-color: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-light: #eef2ff;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+[data-theme="dark"] {
+    --bg-primary: #1e1e2e;
+    --bg-secondary: #27293d;
+    --bg-tertiary: #2d3047;
+    --text-primary: #e9ecef;
+    --text-secondary: #adb5bd;
+    --border-color: #3d3f54;
+    --shadow: rgba(0, 0, 0, 0.4);
+    --shadow-hover: rgba(0, 0, 0, 0.6);
+    --accent-color: #818cf8;
+    --accent-hover: #6366f1;
+    --accent-light: #312e81;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: var(--bg-primary);
+    padding: 24px 32px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 24px var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-content h1 {
+    font-size: 2.2em;
+    font-weight: 700;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-controls {
+    display: flex;
+    gap: 12px;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 968px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.panel {
+    background: var(--bg-primary);
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px var(--shadow);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.panel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px var(--shadow-hover);
+}
+
+.panel h2 {
+    margin-bottom: 24px;
+    color: var(--text-primary);
+    font-size: 1.6em;
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 15px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    background-color: var(--bg-primary);
+    box-shadow: 0 0 0 4px var(--accent-light);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.prompt-input-wrapper {
+    position: relative;
+}
+
+.btn-icon-small {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--accent-light);
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-icon-small:hover {
+    background: var(--accent-color);
+    transform: scale(1.1);
+}
+
+.custom-size-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.upload-area {
+    border: 3px dashed var(--border-color);
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+}
+
+.upload-area:hover {
+    border-color: var(--accent-color);
+    background: var(--accent-light);
+    transform: scale(1.02);
+}
+
+.upload-area.drag-over {
+    border-color: var(--accent-color);
+    background: var(--accent-light);
+    transform: scale(1.05);
+}
+
+.upload-prompt {
+    pointer-events: none;
+}
+
+.upload-icon {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 16px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.upload-area p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-weight: 500;
+}
+
+#previewImage {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 12px;
+    object-fit: contain;
+    box-shadow: 0 4px 16px var(--shadow);
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 16px 32px;
+    background: var(--gradient-1);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 16px var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--shadow-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0px);
+}
+
+.btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    padding: 12px 24px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+}
+
+.btn-icon {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    font-size: 24px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-color);
+    transform: scale(1.1);
+}
+
+.result-area {
+    min-height: 450px;
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    position: relative;
+    overflow: hidden;
+}
+
+.result-area::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        var(--border-color) 10px,
+        var(--border-color) 11px
+    );
+    opacity: 0.03;
+    animation: move 20s linear infinite;
+}
+
+@keyframes move {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
+}
+
+.result-placeholder {
+    text-align: center;
+    color: var(--text-secondary);
+    z-index: 1;
+}
+
+.placeholder-icon {
+    font-size: 80px;
+    display: block;
+    margin-bottom: 20px;
+    opacity: 0.4;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.6; }
+}
+
+#generatedImage {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px var(--shadow);
+    animation: zoomIn 0.5s ease-out;
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.result-actions {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.result-actions button {
+    flex: 1;
+    min-width: 180px;
+}
+
+.tabs-container {
+    background: var(--bg-primary);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 24px var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 4px;
+}
+
+.tab-btn {
+    padding: 14px 28px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px 8px 0 0;
+}
+
+.tab-btn:hover {
+    color: var(--accent-color);
+    background: var(--accent-light);
+}
+
+.tab-btn.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+    background: var(--accent-light);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.favorites-list,
+.history-list {
+    display: grid;
+    gap: 16px;
+}
+
+.favorite-item,
+.history-item {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.favorite-item:hover,
+.history-item:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 16px var(--shadow);
+    transform: translateX(4px);
+}
+
+.favorite-item-header,
+.history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 12px;
+}
+
+.favorite-item-prompt,
+.history-item-prompt {
+    flex: 1;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.favorite-item-actions,
+.history-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.history-item-image {
+    margin-top: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.history-item-image img {
+    max-width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.history-item-image img:hover {
+    transform: scale(1.02);
+}
+
+.history-item-meta {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 60px 20px;
+    font-size: 16px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease-in;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--bg-primary);
+    border-radius: 20px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease-out;
+    border: 1px solid var(--border-color);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 24px 32px;
+    border-bottom: 2px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-secondary);
+    border-radius: 20px 20px 0 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 700;
+}
+
+.modal-close {
+    background: var(--bg-tertiary);
+    border: none;
+    font-size: 32px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--danger-color);
+    color: white;
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 32px;
+}
+
+.modal-footer {
+    padding: 20px 32px;
+    border-top: 2px solid var(--border-color);
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    background: var(--bg-secondary);
+    border-radius: 0 0 20px 20px;
+}
+
+.api-info {
+    margin-bottom: 24px;
+}
+
+.info-box {
+    background: var(--accent-light);
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    border-left: 4px solid var(--accent-color);
+}
+
+.info-box.secondary {
+    background: var(--bg-secondary);
+    border-left-color: var(--text-secondary);
+}
+
+.info-box a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.info-box a:hover {
+    text-decoration: underline;
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+    border: 2px solid var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 12px;
+    }
+
+    .panel {
+        padding: 20px;
+    }
+
+    .header-content h1 {
+        font-size: 1.6em;
+    }
+
+    .result-actions button {
+        min-width: 100%;
+    }
+
+    .tabs {
+        overflow-x: auto;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+    </style>
 </head>
 <body>
     <div class="container">
@@ -24,34 +767,23 @@
         <!-- 主内容区 -->
         <main>
             <div class="main-grid">
-                <!-- 左侧面板 - 生成控制 -->
+                <!-- 左侧面板 -->
                 <div class="panel control-panel">
                     <h2>生成设置</h2>
 
-                    <!-- 提示词输入 -->
                     <div class="form-group">
                         <label for="prompt">提示词</label>
                         <div class="prompt-input-wrapper">
-                            <textarea
-                                id="prompt"
-                                placeholder="描述你想生成的图像..."
-                                rows="4"
-                            ></textarea>
+                            <textarea id="prompt" placeholder="描述你想生成的图像..." rows="4"></textarea>
                             <button id="savePromptBtn" class="btn-icon-small" title="收藏此提示词">⭐</button>
                         </div>
                     </div>
 
-                    <!-- 负向提示词 -->
                     <div class="form-group">
                         <label for="negativePrompt">负向提示词</label>
-                        <textarea
-                            id="negativePrompt"
-                            placeholder="不想出现的内容..."
-                            rows="2"
-                        ></textarea>
+                        <textarea id="negativePrompt" placeholder="不想出现的内容..." rows="2"></textarea>
                     </div>
 
-                    <!-- 图片尺寸 -->
                     <div class="form-group">
                         <label for="imageSize">图片尺寸</label>
                         <select id="imageSize">
@@ -64,7 +796,6 @@
                         </select>
                     </div>
 
-                    <!-- 自定义尺寸 -->
                     <div id="customSizePanel" class="form-group" style="display: none;">
                         <div class="custom-size-grid">
                             <div>
@@ -78,7 +809,6 @@
                         </div>
                     </div>
 
-                    <!-- 参考图片上传 -->
                     <div class="form-group">
                         <label for="uploadArea">参考图片 (可选)</label>
                         <div id="uploadArea" class="upload-area">
@@ -91,13 +821,12 @@
                         </div>
                     </div>
 
-                    <!-- 生成按钮 -->
                     <button id="generateBtn" class="btn-primary">
                         <span id="generateBtnText">生成图像</span>
                     </button>
                 </div>
 
-                <!-- 右侧面板 - 结果显示 -->
+                <!-- 右侧面板 -->
                 <div class="panel result-panel">
                     <h2>生成结果</h2>
 
@@ -122,14 +851,12 @@
                     <button class="tab-btn" data-tab="history">历史记录</button>
                 </div>
 
-                <!-- 收藏的提示词 -->
                 <div id="favoritesTab" class="tab-content active">
                     <div id="favoritesList" class="favorites-list">
                         <p class="empty-message">暂无收藏的提示词</p>
                     </div>
                 </div>
 
-                <!-- 历史记录 -->
                 <div id="historyTab" class="tab-content">
                     <div id="historyList" class="history-list">
                         <p class="empty-message">暂无历史记录</p>
@@ -159,22 +886,13 @@
 
                 <div class="form-group">
                     <label for="apiKey">🔑 Google AI API Key</label>
-                    <input
-                        type="password"
-                        id="apiKey"
-                        placeholder="AIza..."
-                    >
+                    <input type="password" id="apiKey" placeholder="AIza...">
                     <small>您的 API 密钥会安全存储在本地浏览器</small>
                 </div>
 
                 <div class="form-group">
                     <label for="apiEndpoint">🌐 API 端点 (高级)</label>
-                    <input
-                        type="text"
-                        id="apiEndpoint"
-                        placeholder="https://generativelanguage.googleapis.com/..."
-                        value="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent"
-                    >
+                    <input type="text" id="apiEndpoint" placeholder="https://generativelanguage.googleapis.com/..." value="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent">
                     <small>支持第三方 API 中转服务</small>
                 </div>
             </div>
@@ -185,6 +903,719 @@
         </div>
     </div>
 
-    <script src="js/app.js"></script>
+    <script>
+// ===== 应用状态管理 =====
+const AppState = {
+    currentTheme: 'light',
+    settings: {
+        apiKey: '',
+        apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent'
+    },
+    favorites: [],
+    history: [],
+    currentImage: null,
+    uploadedImage: null
+};
+
+// ===== 初始化应用 =====
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🍌 Nano Banana 图像生成器启动中...');
+    initializeApp();
+});
+
+function initializeApp() {
+    loadSettings();
+    loadFavorites();
+    loadHistory();
+    setupEventListeners();
+    updateTheme();
+    console.log('✅ Nano Banana 图像生成器已就绪！');
+}
+
+// ===== 本地存储管理 =====
+function loadSettings() {
+    const savedSettings = localStorage.getItem('nanoBananaSettings');
+    if (savedSettings) {
+        AppState.settings = { ...AppState.settings, ...JSON.parse(savedSettings) };
+    }
+
+    // 更新 UI
+    if (document.getElementById('apiKey')) {
+        document.getElementById('apiKey').value = AppState.settings.apiKey || '';
+    }
+    if (document.getElementById('apiEndpoint')) {
+        document.getElementById('apiEndpoint').value = AppState.settings.apiEndpoint;
+    }
+
+    const savedTheme = localStorage.getItem('nanoBananaTheme') || 'light';
+    AppState.currentTheme = savedTheme;
+}
+
+function saveSettings() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const apiEndpoint = document.getElementById('apiEndpoint').value.trim();
+
+    AppState.settings.apiKey = apiKey;
+    AppState.settings.apiEndpoint = apiEndpoint;
+
+    localStorage.setItem('nanoBananaSettings', JSON.stringify(AppState.settings));
+    showNotification('设置已保存', 'success');
+    closeSettingsModal();
+}
+
+function loadFavorites() {
+    const saved = localStorage.getItem('nanoBananaFavorites');
+    if (saved) {
+        AppState.favorites = JSON.parse(saved);
+        renderFavorites();
+    }
+}
+
+function saveFavorites() {
+    localStorage.setItem('nanoBananaFavorites', JSON.stringify(AppState.favorites));
+}
+
+function loadHistory() {
+    const saved = localStorage.getItem('nanoBananaHistory');
+    if (saved) {
+        AppState.history = JSON.parse(saved);
+        renderHistory();
+    }
+}
+
+function saveHistory() {
+    // 只保留最近50条
+    if (AppState.history.length > 50) {
+        AppState.history = AppState.history.slice(0, 50);
+    }
+    localStorage.setItem('nanoBananaHistory', JSON.stringify(AppState.history));
+}
+
+// ===== 主题切换 =====
+function toggleTheme() {
+    AppState.currentTheme = AppState.currentTheme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('nanoBananaTheme', AppState.currentTheme);
+    updateTheme();
+}
+
+function updateTheme() {
+    const html = document.documentElement;
+    const themeIcon = document.querySelector('.theme-icon');
+
+    if (AppState.currentTheme === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+        if (themeIcon) themeIcon.textContent = '☀️';
+    } else {
+        html.removeAttribute('data-theme');
+        if (themeIcon) themeIcon.textContent = '🌙';
+    }
+}
+
+// ===== 事件监听器设置 =====
+function setupEventListeners() {
+    console.log('设置事件监听器...');
+
+    // 主题切换
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+        console.log('✓ 主题切换按钮已绑定');
+    }
+
+    // 设置模态框
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', openSettingsModal);
+        console.log('✓ 设置按钮已绑定');
+    }
+
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', saveSettings);
+        console.log('✓ 保存设置按钮已绑定');
+    }
+
+    // 关闭模态框
+    const closeButtons = document.querySelectorAll('.modal-close');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', closeSettingsModal);
+    });
+
+    // 点击模态框外部关闭
+    const settingsModal = document.getElementById('settingsModal');
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target.id === 'settingsModal') {
+                closeSettingsModal();
+            }
+        });
+    }
+
+    // 图片尺寸选择
+    const imageSize = document.getElementById('imageSize');
+    if (imageSize) {
+        imageSize.addEventListener('change', handleSizeChange);
+        console.log('✓ 尺寸选择已绑定');
+    }
+
+    // 文件上传
+    const uploadArea = document.getElementById('uploadArea');
+    const imageInput = document.getElementById('imageInput');
+
+    if (uploadArea && imageInput) {
+        uploadArea.addEventListener('click', () => imageInput.click());
+        imageInput.addEventListener('change', handleFileUpload);
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        console.log('✓ 文件上传已绑定');
+    }
+
+    // 粘贴从 Photoshop
+    document.addEventListener('paste', handlePaste);
+    console.log('✓ 粘贴功能已绑定');
+
+    // 生成按钮
+    const generateBtn = document.getElementById('generateBtn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', generateImage);
+        console.log('✓ 生成按钮已绑定');
+    }
+
+    // 结果操作
+    const copyBtn = document.getElementById('copyToClipboardBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', copyToClipboard);
+    }
+
+    const downloadBtn = document.getElementById('downloadBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadImage);
+    }
+
+    // 保存提示词
+    const savePromptBtn = document.getElementById('savePromptBtn');
+    if (savePromptBtn) {
+        savePromptBtn.addEventListener('click', saveCurrentPrompt);
+        console.log('✓ 保存提示词按钮已绑定');
+    }
+
+    // 标签页切换
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+    console.log('✓ 标签页切换已绑定');
+}
+
+// ===== 模态框控制 =====
+function openSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.add('show');
+        console.log('打开设置模态框');
+    }
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.remove('show');
+        console.log('关闭设置模态框');
+    }
+}
+
+// ===== 图片尺寸控制 =====
+function handleSizeChange(e) {
+    const customPanel = document.getElementById('customSizePanel');
+    if (customPanel) {
+        if (e.target.value === 'custom') {
+            customPanel.style.display = 'block';
+        } else {
+            customPanel.style.display = 'none';
+        }
+    }
+}
+
+function getImageSize() {
+    const sizeValue = document.getElementById('imageSize').value;
+
+    if (sizeValue === 'custom') {
+        const width = document.getElementById('customWidth').value;
+        const height = document.getElementById('customHeight').value;
+        return { width: parseInt(width), height: parseInt(height) };
+    }
+
+    const [width, height] = sizeValue.split('x').map(Number);
+    return { width, height };
+}
+
+// ===== 文件上传处理 =====
+function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        readImageFile(file);
+    }
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        readImageFile(file);
+    }
+}
+
+function readImageFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        AppState.uploadedImage = e.target.result;
+        displayUploadedImage(e.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
+function displayUploadedImage(dataUrl) {
+    const uploadPrompt = document.querySelector('.upload-prompt');
+    const previewImage = document.getElementById('previewImage');
+
+    if (uploadPrompt) uploadPrompt.style.display = 'none';
+    if (previewImage) {
+        previewImage.src = dataUrl;
+        previewImage.style.display = 'block';
+    }
+}
+
+// ===== Photoshop 集成 - 粘贴功能 =====
+async function handlePaste(e) {
+    const items = e.clipboardData.items;
+
+    for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+            const blob = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                AppState.uploadedImage = event.target.result;
+                displayUploadedImage(event.target.result);
+                showNotification('已从剪贴板粘贴图片', 'success');
+            };
+            reader.readAsDataURL(blob);
+            break;
+        }
+    }
+}
+
+// ===== Photoshop 集成 - 复制功能 =====
+async function copyToClipboard() {
+    if (!AppState.currentImage) {
+        showNotification('没有可复制的图片', 'error');
+        return;
+    }
+
+    try {
+        // 将 base64 转换为 blob
+        const response = await fetch(AppState.currentImage);
+        const blob = await response.blob();
+
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                [blob.type]: blob
+            })
+        ]);
+
+        showNotification('图片已复制到剪贴板，可以直接粘贴到 Photoshop!', 'success');
+    } catch (err) {
+        console.error('复制失败:', err);
+        showNotification('复制失败，请手动下载图片', 'error');
+    }
+}
+
+// ===== 图像生成核心功能 - Google Gemini 2.5 Flash Image API =====
+async function generateImage() {
+    const prompt = document.getElementById('prompt').value.trim();
+
+    if (!prompt) {
+        showNotification('请输入提示词', 'error');
+        return;
+    }
+
+    if (!AppState.settings.apiKey) {
+        showNotification('请先在设置中配置 Google AI API Key', 'error');
+        openSettingsModal();
+        return;
+    }
+
+    const generateBtn = document.getElementById('generateBtn');
+    const generateBtnText = document.getElementById('generateBtnText');
+
+    // 禁用按钮并显示加载状态
+    generateBtn.disabled = true;
+    generateBtnText.innerHTML = '生成中... <span class="loading"></span>';
+
+    try {
+        console.log('开始生成图像...');
+        const imageDataUrl = await callGeminiImageAPI(prompt);
+
+        // 显示生成的图片
+        displayGeneratedImage(imageDataUrl);
+
+        // 添加到历史记录
+        addToHistory(prompt, imageDataUrl);
+
+        showNotification('图片生成成功!', 'success');
+    } catch (error) {
+        console.error('生成失败:', error);
+        showNotification('生成失败: ' + error.message, 'error');
+    } finally {
+        // 恢复按钮状态
+        generateBtn.disabled = false;
+        generateBtnText.innerHTML = '生成图像';
+    }
+}
+
+async function callGeminiImageAPI(prompt) {
+    const negativePrompt = document.getElementById('negativePrompt').value.trim();
+
+    // 组合正向和负向提示词
+    let fullPrompt = prompt;
+    if (negativePrompt) {
+        fullPrompt += `\n\nAvoid: ${negativePrompt}`;
+    }
+
+    const size = getImageSize();
+
+    // 添加尺寸信息到提示词
+    if (size.width !== 1024 || size.height !== 1024) {
+        fullPrompt += `\n\nAspect ratio: ${size.width}x${size.height}`;
+    }
+
+    console.log('调用 Gemini API:', fullPrompt);
+
+    // 调用 Google Gemini 2.5 Flash Image API
+    const response = await fetch(AppState.settings.apiEndpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': AppState.settings.apiKey
+        },
+        body: JSON.stringify({
+            contents: [{
+                parts: [{
+                    text: fullPrompt
+                }]
+            }]
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API 错误响应:', errorText);
+        throw new Error(`API 请求失败: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('API 响应:', data);
+
+    // 提取图片数据 (Gemini 返回 base64 编码的图片)
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        const parts = data.candidates[0].content.parts;
+        for (const part of parts) {
+            if (part.inlineData && part.inlineData.data) {
+                // 返回 base64 格式的图片
+                const mimeType = part.inlineData.mimeType || 'image/png';
+                return `data:${mimeType};base64,${part.inlineData.data}`;
+            }
+        }
+    }
+
+    throw new Error('无法从响应中提取图片数据');
+}
+
+function displayGeneratedImage(imageDataUrl) {
+    AppState.currentImage = imageDataUrl;
+
+    const resultArea = document.getElementById('resultArea');
+    if (resultArea) {
+        resultArea.innerHTML = `<img id="generatedImage" src="${imageDataUrl}" alt="生成的图片">`;
+    }
+
+    const resultActions = document.getElementById('resultActions');
+    if (resultActions) {
+        resultActions.style.display = 'flex';
+    }
+}
+
+// ===== 历史记录管理 =====
+function addToHistory(prompt, imageDataUrl) {
+    const size = getImageSize();
+    const historyItem = {
+        id: Date.now(),
+        prompt: prompt,
+        imageUrl: imageDataUrl,
+        timestamp: new Date().toISOString(),
+        size: `${size.width}x${size.height}`
+    };
+
+    AppState.history.unshift(historyItem);
+    saveHistory();
+    renderHistory();
+}
+
+function renderHistory() {
+    const historyList = document.getElementById('historyList');
+    if (!historyList) return;
+
+    if (AppState.history.length === 0) {
+        historyList.innerHTML = '<p class="empty-message">暂无历史记录</p>';
+        return;
+    }
+
+    historyList.innerHTML = AppState.history.map(item => `
+        <div class="history-item">
+            <div class="history-item-header">
+                <div class="history-item-prompt">${escapeHtml(item.prompt)}</div>
+                <div class="history-item-actions">
+                    <button class="btn-icon-small" onclick="reusePrompt(\`${escapeHtml(item.prompt)}\`)" title="复用提示词">🔄</button>
+                    <button class="btn-icon-small" onclick="deleteHistoryItem(${item.id})" title="删除">🗑️</button>
+                </div>
+            </div>
+            <div class="history-item-image">
+                <img src="${item.imageUrl}" alt="历史图片" onclick="viewImage(\`${item.imageUrl}\`)">
+            </div>
+            <div class="history-item-meta">
+                ${new Date(item.timestamp).toLocaleString('zh-CN')} | ${item.size}
+            </div>
+        </div>
+    `).join('');
+}
+
+function deleteHistoryItem(id) {
+    AppState.history = AppState.history.filter(item => item.id !== id);
+    saveHistory();
+    renderHistory();
+    showNotification('已删除历史记录', 'success');
+}
+
+function viewImage(imageUrl) {
+    AppState.currentImage = imageUrl;
+    displayGeneratedImage(imageUrl);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== 收藏管理 =====
+function saveCurrentPrompt() {
+    const prompt = document.getElementById('prompt').value.trim();
+
+    if (!prompt) {
+        showNotification('请先输入提示词', 'error');
+        return;
+    }
+
+    // 检查是否已存在
+    if (AppState.favorites.some(fav => fav.prompt === prompt)) {
+        showNotification('此提示词已收藏', 'warning');
+        return;
+    }
+
+    const favorite = {
+        id: Date.now(),
+        prompt: prompt,
+        negativePrompt: document.getElementById('negativePrompt').value.trim(),
+        timestamp: new Date().toISOString()
+    };
+
+    AppState.favorites.unshift(favorite);
+    saveFavorites();
+    renderFavorites();
+    showNotification('提示词已收藏', 'success');
+}
+
+function renderFavorites() {
+    const favoritesList = document.getElementById('favoritesList');
+    if (!favoritesList) return;
+
+    if (AppState.favorites.length === 0) {
+        favoritesList.innerHTML = '<p class="empty-message">暂无收藏的提示词</p>';
+        return;
+    }
+
+    favoritesList.innerHTML = AppState.favorites.map(fav => `
+        <div class="favorite-item">
+            <div class="favorite-item-header">
+                <div class="favorite-item-prompt">${escapeHtml(fav.prompt)}</div>
+                <div class="favorite-item-actions">
+                    <button class="btn-icon-small" onclick="useFavorite(${fav.id})" title="使用">📝</button>
+                    <button class="btn-icon-small" onclick="deleteFavorite(${fav.id})" title="删除">🗑️</button>
+                </div>
+            </div>
+            ${fav.negativePrompt ? `<div style="margin-top: 8px; font-size: 13px; color: var(--text-secondary);">负向: ${escapeHtml(fav.negativePrompt)}</div>` : ''}
+            <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                ${new Date(fav.timestamp).toLocaleString('zh-CN')}
+            </div>
+        </div>
+    `).join('');
+}
+
+function useFavorite(id) {
+    const favorite = AppState.favorites.find(fav => fav.id === id);
+    if (favorite) {
+        document.getElementById('prompt').value = favorite.prompt;
+        document.getElementById('negativePrompt').value = favorite.negativePrompt || '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showNotification('已应用收藏的提示词', 'success');
+    }
+}
+
+function deleteFavorite(id) {
+    AppState.favorites = AppState.favorites.filter(fav => fav.id !== id);
+    saveFavorites();
+    renderFavorites();
+    showNotification('已删除收藏', 'success');
+}
+
+function reusePrompt(prompt) {
+    document.getElementById('prompt').value = prompt;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showNotification('已复用提示词', 'success');
+}
+
+// ===== 标签页切换 =====
+function switchTab(tabName) {
+    // 更新按钮状态
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+
+    // 更新内容显示
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    if (tabName === 'favorites') {
+        const favTab = document.getElementById('favoritesTab');
+        if (favTab) favTab.classList.add('active');
+    } else if (tabName === 'history') {
+        const histTab = document.getElementById('historyTab');
+        if (histTab) histTab.classList.add('active');
+    }
+}
+
+// ===== 下载图片 =====
+function downloadImage() {
+    if (!AppState.currentImage) {
+        showNotification('没有可下载的图片', 'error');
+        return;
+    }
+
+    const link = document.createElement('a');
+    link.href = AppState.currentImage;
+    link.download = `nano-banana-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotification('图片下载中...', 'success');
+}
+
+// ===== 工具函数 =====
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showNotification(message, type = 'info') {
+    // 创建通知元素
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+
+    const colors = {
+        success: '#4caf50',
+        error: '#f44336',
+        warning: '#ff9800',
+        info: '#2196f3'
+    };
+
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        background-color: ${colors[type] || colors.info};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+        font-weight: 500;
+        max-width: 400px;
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// 添加动画样式
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+
+    .loading {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 0.8s linear infinite;
+        margin-left: 8px;
+        vertical-align: middle;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+    </script>
 </body>
 </html>
