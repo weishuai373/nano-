@@ -2,9 +2,8 @@
 const AppState = {
     currentTheme: 'light',
     settings: {
-        apiBaseUrl: 'https://api.openai.com/v1',
         apiKey: '',
-        modelName: 'dall-e-3'
+        apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent'
     },
     favorites: [],
     history: [],
@@ -14,6 +13,7 @@ const AppState = {
 
 // ===== 初始化应用 =====
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🍌 Nano Banana 图像生成器启动中...');
     initializeApp();
 });
 
@@ -23,7 +23,7 @@ function initializeApp() {
     loadHistory();
     setupEventListeners();
     updateTheme();
-    console.log('Nano Banana 图像生成器已加载');
+    console.log('✅ Nano Banana 图像生成器已就绪！');
 }
 
 // ===== 本地存储管理 =====
@@ -31,9 +31,14 @@ function loadSettings() {
     const savedSettings = localStorage.getItem('nanoBananaSettings');
     if (savedSettings) {
         AppState.settings = { ...AppState.settings, ...JSON.parse(savedSettings) };
-        document.getElementById('apiBaseUrl').value = AppState.settings.apiBaseUrl;
-        document.getElementById('apiKey').value = AppState.settings.apiKey;
-        document.getElementById('modelName').value = AppState.settings.modelName;
+    }
+
+    // 更新 UI
+    if (document.getElementById('apiKey')) {
+        document.getElementById('apiKey').value = AppState.settings.apiKey || '';
+    }
+    if (document.getElementById('apiEndpoint')) {
+        document.getElementById('apiEndpoint').value = AppState.settings.apiEndpoint;
     }
 
     const savedTheme = localStorage.getItem('nanoBananaTheme') || 'light';
@@ -41,11 +46,15 @@ function loadSettings() {
 }
 
 function saveSettings() {
-    AppState.settings.apiBaseUrl = document.getElementById('apiBaseUrl').value;
-    AppState.settings.apiKey = document.getElementById('apiKey').value;
-    AppState.settings.modelName = document.getElementById('modelName').value;
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const apiEndpoint = document.getElementById('apiEndpoint').value.trim();
+
+    AppState.settings.apiKey = apiKey;
+    AppState.settings.apiEndpoint = apiEndpoint;
+
     localStorage.setItem('nanoBananaSettings', JSON.stringify(AppState.settings));
     showNotification('设置已保存', 'success');
+    closeSettingsModal();
 }
 
 function loadFavorites() {
@@ -89,88 +98,136 @@ function updateTheme() {
 
     if (AppState.currentTheme === 'dark') {
         html.setAttribute('data-theme', 'dark');
-        themeIcon.textContent = '☀️';
+        if (themeIcon) themeIcon.textContent = '☀️';
     } else {
         html.removeAttribute('data-theme');
-        themeIcon.textContent = '🌙';
+        if (themeIcon) themeIcon.textContent = '🌙';
     }
 }
 
 // ===== 事件监听器设置 =====
 function setupEventListeners() {
+    console.log('设置事件监听器...');
+
     // 主题切换
-    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+        console.log('✓ 主题切换按钮已绑定');
+    }
 
     // 设置模态框
-    document.getElementById('settingsBtn').addEventListener('click', openSettingsModal);
-    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-        saveSettings();
-        closeSettingsModal();
-    });
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', openSettingsModal);
+        console.log('✓ 设置按钮已绑定');
+    }
 
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', saveSettings);
+        console.log('✓ 保存设置按钮已绑定');
+    }
+
+    // 关闭模态框
     const closeButtons = document.querySelectorAll('.modal-close');
     closeButtons.forEach(btn => {
         btn.addEventListener('click', closeSettingsModal);
     });
 
     // 点击模态框外部关闭
-    document.getElementById('settingsModal').addEventListener('click', (e) => {
-        if (e.target.id === 'settingsModal') {
-            closeSettingsModal();
-        }
-    });
+    const settingsModal = document.getElementById('settingsModal');
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target.id === 'settingsModal') {
+                closeSettingsModal();
+            }
+        });
+    }
 
     // 图片尺寸选择
-    document.getElementById('imageSize').addEventListener('change', handleSizeChange);
+    const imageSize = document.getElementById('imageSize');
+    if (imageSize) {
+        imageSize.addEventListener('change', handleSizeChange);
+        console.log('✓ 尺寸选择已绑定');
+    }
 
     // 文件上传
     const uploadArea = document.getElementById('uploadArea');
     const imageInput = document.getElementById('imageInput');
 
-    uploadArea.addEventListener('click', () => imageInput.click());
-    imageInput.addEventListener('change', handleFileUpload);
-
-    // 拖放上传
-    uploadArea.addEventListener('dragover', handleDragOver);
-    uploadArea.addEventListener('dragleave', handleDragLeave);
-    uploadArea.addEventListener('drop', handleDrop);
+    if (uploadArea && imageInput) {
+        uploadArea.addEventListener('click', () => imageInput.click());
+        imageInput.addEventListener('change', handleFileUpload);
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        console.log('✓ 文件上传已绑定');
+    }
 
     // 粘贴从 Photoshop
     document.addEventListener('paste', handlePaste);
+    console.log('✓ 粘贴功能已绑定');
 
     // 生成按钮
-    document.getElementById('generateBtn').addEventListener('click', generateImage);
+    const generateBtn = document.getElementById('generateBtn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', generateImage);
+        console.log('✓ 生成按钮已绑定');
+    }
 
     // 结果操作
-    document.getElementById('copyToClipboardBtn').addEventListener('click', copyToClipboard);
-    document.getElementById('downloadBtn').addEventListener('click', downloadImage);
+    const copyBtn = document.getElementById('copyToClipboardBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', copyToClipboard);
+    }
+
+    const downloadBtn = document.getElementById('downloadBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadImage);
+    }
 
     // 保存提示词
-    document.getElementById('savePromptBtn').addEventListener('click', saveCurrentPrompt);
+    const savePromptBtn = document.getElementById('savePromptBtn');
+    if (savePromptBtn) {
+        savePromptBtn.addEventListener('click', saveCurrentPrompt);
+        console.log('✓ 保存提示词按钮已绑定');
+    }
 
     // 标签页切换
     const tabButtons = document.querySelectorAll('.tab-btn');
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
+    console.log('✓ 标签页切换已绑定');
 }
 
 // ===== 模态框控制 =====
 function openSettingsModal() {
-    document.getElementById('settingsModal').classList.add('show');
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.add('show');
+        console.log('打开设置模态框');
+    }
 }
 
 function closeSettingsModal() {
-    document.getElementById('settingsModal').classList.remove('show');
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.remove('show');
+        console.log('关闭设置模态框');
+    }
 }
 
 // ===== 图片尺寸控制 =====
 function handleSizeChange(e) {
     const customPanel = document.getElementById('customSizePanel');
-    if (e.target.value === 'custom') {
-        customPanel.style.display = 'block';
-    } else {
-        customPanel.style.display = 'none';
+    if (customPanel) {
+        if (e.target.value === 'custom') {
+            customPanel.style.display = 'block';
+        } else {
+            customPanel.style.display = 'none';
+        }
     }
 }
 
@@ -180,10 +237,11 @@ function getImageSize() {
     if (sizeValue === 'custom') {
         const width = document.getElementById('customWidth').value;
         const height = document.getElementById('customHeight').value;
-        return `${width}x${height}`;
+        return { width: parseInt(width), height: parseInt(height) };
     }
 
-    return sizeValue;
+    const [width, height] = sizeValue.split('x').map(Number);
+    return { width, height };
 }
 
 // ===== 文件上传处理 =====
@@ -226,9 +284,11 @@ function displayUploadedImage(dataUrl) {
     const uploadPrompt = document.querySelector('.upload-prompt');
     const previewImage = document.getElementById('previewImage');
 
-    uploadPrompt.style.display = 'none';
-    previewImage.src = dataUrl;
-    previewImage.style.display = 'block';
+    if (uploadPrompt) uploadPrompt.style.display = 'none';
+    if (previewImage) {
+        previewImage.src = dataUrl;
+        previewImage.style.display = 'block';
+    }
 }
 
 // ===== Photoshop 集成 - 粘贴功能 =====
@@ -258,6 +318,7 @@ async function copyToClipboard() {
     }
 
     try {
+        // 将 base64 转换为 blob
         const response = await fetch(AppState.currentImage);
         const blob = await response.blob();
 
@@ -274,7 +335,7 @@ async function copyToClipboard() {
     }
 }
 
-// ===== 图像生成核心功能 =====
+// ===== 图像生成核心功能 - Google Gemini 2.5 Flash Image API =====
 async function generateImage() {
     const prompt = document.getElementById('prompt').value.trim();
 
@@ -284,7 +345,7 @@ async function generateImage() {
     }
 
     if (!AppState.settings.apiKey) {
-        showNotification('请先在设置中配置 API Key', 'error');
+        showNotification('请先在设置中配置 Google AI API Key', 'error');
         openSettingsModal();
         return;
     }
@@ -294,16 +355,17 @@ async function generateImage() {
 
     // 禁用按钮并显示加载状态
     generateBtn.disabled = true;
-    generateBtnText.innerHTML = '<span class="loading"></span> 生成中...';
+    generateBtnText.innerHTML = '生成中... <span class="loading"></span>';
 
     try {
-        const imageUrl = await callImageGenerationAPI(prompt);
+        console.log('开始生成图像...');
+        const imageDataUrl = await callGeminiImageAPI(prompt);
 
         // 显示生成的图片
-        displayGeneratedImage(imageUrl);
+        displayGeneratedImage(imageDataUrl);
 
         // 添加到历史记录
-        addToHistory(prompt, imageUrl);
+        addToHistory(prompt, imageDataUrl);
 
         showNotification('图片生成成功!', 'success');
     } catch (error) {
@@ -312,57 +374,91 @@ async function generateImage() {
     } finally {
         // 恢复按钮状态
         generateBtn.disabled = false;
-        generateBtnText.textContent = '生成图像';
+        generateBtnText.innerHTML = '生成图像';
     }
 }
 
-async function callImageGenerationAPI(prompt) {
+async function callGeminiImageAPI(prompt) {
     const negativePrompt = document.getElementById('negativePrompt').value.trim();
-    const size = getImageSize();
-    const [width, height] = size.split('x');
 
-    // 使用 DALL-E 3 API
-    const response = await fetch(`${AppState.settings.apiBaseUrl}/images/generations`, {
+    // 组合正向和负向提示词
+    let fullPrompt = prompt;
+    if (negativePrompt) {
+        fullPrompt += `\n\nAvoid: ${negativePrompt}`;
+    }
+
+    const size = getImageSize();
+
+    // 添加尺寸信息到提示词
+    if (size.width !== 1024 || size.height !== 1024) {
+        fullPrompt += `\n\nAspect ratio: ${size.width}x${size.height}`;
+    }
+
+    console.log('调用 Gemini API:', fullPrompt);
+
+    // 调用 Google Gemini 2.5 Flash Image API
+    const response = await fetch(AppState.settings.apiEndpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${AppState.settings.apiKey}`
+            'x-goog-api-key': AppState.settings.apiKey
         },
         body: JSON.stringify({
-            model: AppState.settings.modelName,
-            prompt: prompt,
-            n: 1,
-            size: size === '1024x1024' || size === '1024x768' || size === '768x1024' ? size : '1024x1024',
-            quality: 'standard'
+            contents: [{
+                parts: [{
+                    text: fullPrompt
+                }]
+            }]
         })
     });
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || '生成失败');
+        const errorText = await response.text();
+        console.error('API 错误响应:', errorText);
+        throw new Error(`API 请求失败: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    return data.data[0].url;
+    console.log('API 响应:', data);
+
+    // 提取图片数据 (Gemini 返回 base64 编码的图片)
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        const parts = data.candidates[0].content.parts;
+        for (const part of parts) {
+            if (part.inlineData && part.inlineData.data) {
+                // 返回 base64 格式的图片
+                const mimeType = part.inlineData.mimeType || 'image/png';
+                return `data:${mimeType};base64,${part.inlineData.data}`;
+            }
+        }
+    }
+
+    throw new Error('无法从响应中提取图片数据');
 }
 
-function displayGeneratedImage(imageUrl) {
-    AppState.currentImage = imageUrl;
+function displayGeneratedImage(imageDataUrl) {
+    AppState.currentImage = imageDataUrl;
 
     const resultArea = document.getElementById('resultArea');
-    resultArea.innerHTML = `<img id="generatedImage" src="${imageUrl}" alt="生成的图片">`;
+    if (resultArea) {
+        resultArea.innerHTML = `<img id="generatedImage" src="${imageDataUrl}" alt="生成的图片">`;
+    }
 
-    document.getElementById('resultActions').style.display = 'flex';
+    const resultActions = document.getElementById('resultActions');
+    if (resultActions) {
+        resultActions.style.display = 'flex';
+    }
 }
 
 // ===== 历史记录管理 =====
-function addToHistory(prompt, imageUrl) {
+function addToHistory(prompt, imageDataUrl) {
+    const size = getImageSize();
     const historyItem = {
         id: Date.now(),
         prompt: prompt,
-        imageUrl: imageUrl,
+        imageUrl: imageDataUrl,
         timestamp: new Date().toISOString(),
-        size: getImageSize()
+        size: `${size.width}x${size.height}`
     };
 
     AppState.history.unshift(historyItem);
@@ -372,6 +468,7 @@ function addToHistory(prompt, imageUrl) {
 
 function renderHistory() {
     const historyList = document.getElementById('historyList');
+    if (!historyList) return;
 
     if (AppState.history.length === 0) {
         historyList.innerHTML = '<p class="empty-message">暂无历史记录</p>';
@@ -383,12 +480,12 @@ function renderHistory() {
             <div class="history-item-header">
                 <div class="history-item-prompt">${escapeHtml(item.prompt)}</div>
                 <div class="history-item-actions">
-                    <button class="btn-icon-small" onclick="reusePrompt('${escapeHtml(item.prompt)}')" title="复用提示词">🔄</button>
+                    <button class="btn-icon-small" onclick="reusePrompt(\`${escapeHtml(item.prompt)}\`)" title="复用提示词">🔄</button>
                     <button class="btn-icon-small" onclick="deleteHistoryItem(${item.id})" title="删除">🗑️</button>
                 </div>
             </div>
             <div class="history-item-image">
-                <img src="${item.imageUrl}" alt="历史图片" onclick="viewImage('${item.imageUrl}')">
+                <img src="${item.imageUrl}" alt="历史图片" onclick="viewImage(\`${item.imageUrl}\`)">
             </div>
             <div class="history-item-meta">
                 ${new Date(item.timestamp).toLocaleString('zh-CN')} | ${item.size}
@@ -440,6 +537,7 @@ function saveCurrentPrompt() {
 
 function renderFavorites() {
     const favoritesList = document.getElementById('favoritesList');
+    if (!favoritesList) return;
 
     if (AppState.favorites.length === 0) {
         favoritesList.innerHTML = '<p class="empty-message">暂无收藏的提示词</p>';
@@ -499,9 +597,11 @@ function switchTab(tabName) {
     });
 
     if (tabName === 'favorites') {
-        document.getElementById('favoritesTab').classList.add('active');
+        const favTab = document.getElementById('favoritesTab');
+        if (favTab) favTab.classList.add('active');
     } else if (tabName === 'history') {
-        document.getElementById('historyTab').classList.add('active');
+        const histTab = document.getElementById('historyTab');
+        if (histTab) histTab.classList.add('active');
     }
 }
 
@@ -534,17 +634,26 @@ function showNotification(message, type = 'info') {
     notification.className = 'notification';
     notification.textContent = message;
 
+    const colors = {
+        success: '#4caf50',
+        error: '#f44336',
+        warning: '#ff9800',
+        info: '#2196f3'
+    };
+
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        padding: 15px 20px;
-        background-color: ${type === 'success' ? 'var(--success-color)' : type === 'error' ? 'var(--danger-color)' : type === 'warning' ? 'var(--warning-color)' : 'var(--accent-color)'};
+        padding: 15px 25px;
+        background-color: ${colors[type] || colors.info};
         color: white;
         border-radius: 8px;
-        box-shadow: 0 4px 12px var(--shadow);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         z-index: 10000;
         animation: slideIn 0.3s ease-out;
+        font-weight: 500;
+        max-width: 400px;
     `;
 
     document.body.appendChild(notification);
@@ -552,7 +661,9 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease-in';
         setTimeout(() => {
-            document.body.removeChild(notification);
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
         }, 300);
     }, 3000);
 }
@@ -580,6 +691,22 @@ style.textContent = `
             transform: translateX(400px);
             opacity: 0;
         }
+    }
+
+    .loading {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 0.8s linear infinite;
+        margin-left: 8px;
+        vertical-align: middle;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 `;
 document.head.appendChild(style);

@@ -147,35 +147,35 @@
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label for="apiBaseUrl">API 基础 URL</label>
-                    <input
-                        type="text"
-                        id="apiBaseUrl"
-                        placeholder="https://api.openai.com/v1"
-                        value="https://api.openai.com/v1"
-                    >
-                    <small>支持第三方 API 中转服务</small>
+                <div class="api-info">
+                    <p class="info-box">
+                        <strong>🍌 Nano Banana</strong> 使用 Google Gemini 2.5 Flash Image API
+                    </p>
+                    <p class="info-box secondary">
+                        免费获取 API Key: 访问
+                        <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a>
+                    </p>
                 </div>
 
                 <div class="form-group">
-                    <label for="apiKey">API Key</label>
+                    <label for="apiKey">🔑 Google AI API Key</label>
                     <input
                         type="password"
                         id="apiKey"
-                        placeholder="sk-..."
+                        placeholder="AIza..."
                     >
-                    <small>您的 API 密钥会安全存储在本地</small>
+                    <small>您的 API 密钥会安全存储在本地浏览器</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="modelName">模型名称</label>
+                    <label for="apiEndpoint">🌐 API 端点 (高级)</label>
                     <input
                         type="text"
-                        id="modelName"
-                        placeholder="dall-e-3"
-                        value="dall-e-3"
+                        id="apiEndpoint"
+                        placeholder="https://generativelanguage.googleapis.com/..."
+                        value="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent"
                     >
+                    <small>支持第三方 API 中转服务</small>
                 </div>
             </div>
             <div class="modal-footer">
