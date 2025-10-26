@@ -1302,25 +1302,42 @@ async function callGeminiImageAPI(prompt) {
 
     console.log('调用 Gemini API:', fullPrompt);
 
-    // 调用 Google Gemini 2.5 Flash Image API
+    // 调用 Google Gemini 2.5 Flash Image API - 正确的格式
+    const requestBody = {
+        contents: [{
+            parts: [{
+                text: fullPrompt
+            }]
+        }],
+        generationConfig: {
+            responseModalities: ["Image"]
+        }
+    };
+
+    console.log('请求体:', JSON.stringify(requestBody, null, 2));
+
     const response = await fetch(AppState.settings.apiEndpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'x-goog-api-key': AppState.settings.apiKey
         },
-        body: JSON.stringify({
-            contents: [{
-                parts: [{
-                    text: fullPrompt
-                }]
-            }]
-        })
+        body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
         const errorText = await response.text();
         console.error('API 错误响应:', errorText);
+        let errorData;
+        try {
+            errorData = JSON.parse(errorText);
+        } catch (e) {
+            throw new Error(`API 请求失败: ${response.status} ${response.statusText}`);
+        }
+
+        if (errorData.error) {
+            throw new Error(errorData.error.message || `API 错误: ${response.status}`);
+        }
         throw new Error(`API 请求失败: ${response.status} ${response.statusText}`);
     }
 
@@ -1339,7 +1356,7 @@ async function callGeminiImageAPI(prompt) {
         }
     }
 
-    throw new Error('无法从响应中提取图片数据');
+    throw new Error('无法从响应中提取图片数据。API响应: ' + JSON.stringify(data));
 }
 
 function displayGeneratedImage(imageDataUrl) {
