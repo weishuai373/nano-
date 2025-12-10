@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍌 Nano Banana Pro - AI 无限画布编辑器</title>
+    <style>
+/* ===== CSS 变量 ===== */
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-tertiary: #0f3460;
+    --accent-primary: #e94560;
+    --accent-secondary: #533483;
+    --text-primary: #eaeaea;
+    --text-secondary: #a0a0a0;
+    --border-color: #2d3561;
+    --success: #4caf50;
+    --warning: #ff9800;
+    --error: #f44336;
+    --panel-width: 350px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+}
+
+/* ===== 主布局 ===== */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* ===== 左侧面板 ===== */
+.left-panel {
+    width: var(--panel-width);
+    background: var(--bg-secondary);
+    border-right: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+}
+
+.panel-header {
+    padding: 20px;
+    background: var(--bg-tertiary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.panel-header h1 {
+    font-size: 1.5em;
+    background: linear-gradient(135deg, #e94560, #533483);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.panel-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.panel-section h3 {
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+
+/* ===== 画布容器 ===== */
+.canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #0a0a0a;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+#infiniteCanvas {
+    cursor: grab;
+    touch-action: none;
+}
+
+#infiniteCanvas.grabbing {
+    cursor: grabbing;
+}
+
+/* ===== 右侧工具栏 ===== */
+.right-toolbar {
+    width: 80px;
+    background: var(--bg-secondary);
+    border-left: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 10px;
+    gap: 15px;
+    z-index: 100;
+}
+
+.tool-btn {
+    width: 60px;
+    height: 60px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-btn:hover {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    transform: scale(1.1);
+}
+
+.tool-btn.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+/* ===== 表单控件 ===== */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9em;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* ===== 画幅比例网格 ===== */
+.aspect-ratio-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.aspect-ratio-btn {
+    padding: 10px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.75em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.aspect-ratio-btn:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+}
+
+.aspect-ratio-btn.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.aspect-ratio-btn .ratio-name {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.aspect-ratio-btn .ratio-size {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+/* ===== 分辨率选择 ===== */
+.resolution-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.resolution-btn {
+    flex: 1;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.resolution-btn:hover {
+    border-color: var(--accent-primary);
+}
+
+.resolution-btn.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+/* ===== 参考图上传区域 ===== */
+.reference-images {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.reference-slot {
+    aspect-ratio: 1;
+    background: var(--bg-tertiary);
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.reference-slot:hover {
+    border-color: var(--accent-primary);
+    transform: scale(1.05);
+}
+
+.reference-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.reference-slot .remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    background: var(--error);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.reference-slot:hover .remove-btn {
+    display: flex;
+}
+
+/* ===== 按钮样式 ===== */
+.btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    padding: 10px 16px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    border-color: var(--accent-primary);
+}
+
+/* ===== 加载动画 ===== */
+.loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== 画布对象 ===== */
+.canvas-object {
+    position: absolute;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.canvas-object:hover {
+    border-color: var(--accent-primary);
+}
+
+.canvas-object.selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.3);
+}
+
+.canvas-object img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+/* ===== 画布控制条 ===== */
+.canvas-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(26, 26, 46, 0.95);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    backdrop-filter: blur(10px);
+}
+
+.zoom-info {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.canvas-control-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.canvas-control-btn:hover {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+/* ===== 通知 ===== */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification.success { border-color: var(--success); }
+.notification.error { border-color: var(--error); }
+.notification.warning { border-color: var(--warning); }
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ===== 模态框 ===== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 24px;
+    border-bottom: 2px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-size: 1.4em;
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: var(--error);
+    color: white;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 20px 24px;
+    border-top: 2px solid var(--border-color);
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
+/* ===== 小提示 ===== */
+.info-text {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧控制面板 -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <h1>🍌 Nano Banana Pro</h1>
+                <p style="font-size: 0.85em; color: var(--text-secondary); margin-top: 5px;">
+                    AI 无限画布编辑器
+                </p>
+            </div>
+
+            <!-- 生成模式 -->
+            <div class="panel-section">
+                <h3>🎨 生成模式</h3>
+                <div class="resolution-selector">
+                    <button class="resolution-btn active" data-mode="text">文生图</button>
+                    <button class="resolution-btn" data-mode="image">图生图</button>
+                </div>
+            </div>
+
+            <!-- 提示词 -->
+            <div class="panel-section">
+                <h3>✏️ 提示词</h3>
+                <div class="form-group">
+                    <textarea id="promptInput" placeholder="描述你想生成的图像..."></textarea>
+                    <p class="info-text">支持中文和英文描述</p>
+                </div>
+            </div>
+
+            <!-- 画幅比例 -->
+            <div class="panel-section">
+                <h3>📐 画幅比例</h3>
+                <div class="aspect-ratio-grid">
+                    <button class="aspect-ratio-btn" data-ratio="21:9" data-size="1568x672">
+                        <span class="ratio-name">21:9</span>
+                        <span class="ratio-size">1568×672</span>
+                    </button>
+                    <button class="aspect-ratio-btn" data-ratio="16:9" data-size="1456x816">
+                        <span class="ratio-name">16:9</span>
+                        <span class="ratio-size">1456×816</span>
+                    </button>
+                    <button class="aspect-ratio-btn" data-ratio="4:3" data-size="1232x928">
+                        <span class="ratio-name">4:3</span>
+                        <span class="ratio-size">1232×928</span>
+                    </button>
+                    <button class="aspect-ratio-btn" data-ratio="3:2" data-size="1344x896">
+                        <span class="ratio-name">3:2</span>
+                        <span class="ratio-size">1344×896</span>
+                    </button>
+                    <button class="aspect-ratio-btn active" data-ratio="1:1" data-size="1024x1024">
+                        <span class="ratio-name">1:1</span>
+                        <span class="ratio-size">1024×1024</span>
+                    </button>
+                    <button class="aspect-ratio-btn" data-ratio="9:16" data-size="816x1456">
+                        <span class="ratio-name">9:16</span>
+                        <span class="ratio-size">816×1456</span>
+                    </button>
+                    <button class="aspect-ratio-btn" data-ratio="3:4" data-size="928x1232">
+                        <span class="ratio-name">3:4</span>
+                        <span class="ratio-size">928×1232</span>
+                    </button>
+                    <button class="aspect-ratio-btn" data-ratio="2:3" data-size="896x1344">
+                        <span class="ratio-name">2:3</span>
+                        <span class="ratio-size">896×1344</span>
+                    </button>
+                    <button class="aspect-ratio-btn" data-ratio="5:4" data-size="1280x1024">
+                        <span class="ratio-name">5:4</span>
+                        <span class="ratio-size">1280×1024</span>
+                    </button>
+                    <button class="aspect-ratio-btn" data-ratio="4:5" data-size="1024x1280">
+                        <span class="ratio-name">4:5</span>
+                        <span class="ratio-size">1024×1280</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 分辨率 -->
+            <div class="panel-section">
+                <h3>🔍 分辨率</h3>
+                <div class="resolution-selector">
+                    <button class="resolution-btn active" data-resolution="1">1K</button>
+                    <button class="resolution-btn" data-resolution="2">2K</button>
+                    <button class="resolution-btn" data-resolution="4">4K</button>
+                </div>
+                <p class="info-text">分辨率会基于选择的画幅比例按比例缩放</p>
+            </div>
+
+            <!-- 参考图 -->
+            <div class="panel-section">
+                <h3>🖼️ 参考图 (最多5张)</h3>
+                <div class="reference-images" id="referenceImages">
+                    <div class="reference-slot" data-index="0">
+                        <span>+</span>
+                    </div>
+                    <div class="reference-slot" data-index="1">
+                        <span>+</span>
+                    </div>
+                    <div class="reference-slot" data-index="2">
+                        <span>+</span>
+                    </div>
+                    <div class="reference-slot" data-index="3">
+                        <span>+</span>
+                    </div>
+                    <div class="reference-slot" data-index="4">
+                        <span>+</span>
+                    </div>
+                </div>
+                <p class="info-text">点击上传图片 | 每张最大20MB | 支持从PS粘贴 (Ctrl+V)</p>
+                <button class="btn-secondary" id="selectCanvasImageBtn" style="width: 100%; margin-top: 10px;">
+                    📸 从画布选择图片
+                </button>
+            </div>
+
+            <!-- 生成按钮 -->
+            <div class="panel-section">
+                <button class="btn-primary" id="generateBtn">
+                    <span id="generateBtnText">✨ 生成图像</span>
+                </button>
+            </div>
+
+            <!-- 设置 -->
+            <div class="panel-section">
+                <button class="btn-secondary" id="settingsBtn" style="width: 100%;">
+                    ⚙️ API 设置
+                </button>
+            </div>
+        </div>
+
+        <!-- 无限画布 -->
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="infiniteCanvas"></canvas>
+
+            <!-- 画布控制 -->
+            <div class="canvas-controls">
+                <button class="canvas-control-btn" id="zoomOutBtn" title="缩小">−</button>
+                <span class="zoom-info" id="zoomInfo">100%</span>
+                <button class="canvas-control-btn" id="zoomInBtn" title="放大">+</button>
+                <button class="canvas-control-btn" id="resetViewBtn" title="重置视图">⌂</button>
+                <button class="canvas-control-btn" id="clearCanvasBtn" title="清空画布">🗑️</button>
+            </div>
+        </div>
+
+        <!-- 右侧工具栏 -->
+        <div class="right-toolbar">
+            <button class="tool-btn active" id="selectTool" title="选择工具">
+                ⊙
+            </button>
+            <button class="tool-btn" id="panTool" title="平移工具">
+                ✋
+            </button>
+            <button class="tool-btn" id="exportTool" title="导出画布">
+                💾
+            </button>
+            <button class="tool-btn" id="importTool" title="导入图片">
+                📂
+            </button>
+        </div>
+    </div>
+
+    <!-- API设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ API 设置</h2>
+                <button class="modal-close" id="closeSettingsBtn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>🔑 Google AI API Key</label>
+                    <input type="password" id="apiKeyInput" placeholder="AIza...">
+                    <p class="info-text">
+                        获取免费 API Key: <a href="https://aistudio.google.com/apikey" target="_blank" style="color: var(--accent-primary);">Google AI Studio</a>
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label>🌐 API 端点</label>
+                    <select id="apiModelSelect">
+                        <option value="gemini-2.5-flash-image">Gemini 2.5 Flash (Nano Banana)</option>
+                        <option value="gemini-3-pro-image">Gemini 3 Pro (Nano Banana Pro)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="saveSettingsBtn">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="referenceImageInput" accept="image/*" style="display: none;">
+    <input type="file" id="importImageInput" accept="image/*" multiple style="display: none;">
+
+    <script>
+// ===== 应用状态 =====
+const AppState = {
+    apiKey: '',
+    apiModel: 'gemini-2.5-flash-image',
+    mode: 'text', // 'text' 或 'image'
+    prompt: '',
+    aspectRatio: '1:1',
+    aspectSize: '1024x1024',
+    resolution: 1, // 1K, 2K, 4K
+    referenceImages: [], // 最多5张
+    canvasObjects: [], // 画布上的所有对象
+    selectedObject: null,
+    currentTool: 'select',
+    // 画布视图状态
+    canvas: {
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0,
+        isPanning: false,
+        lastX: 0,
+        lastY: 0
+    }
+};
+
+// ===== 初始化 =====
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🍌 Nano Banana Pro 启动中...');
+    initApp();
+});
+
+function initApp() {
+    loadSettings();
+    initCanvas();
+    setupEventListeners();
+    console.log('✅ 应用已就绪！');
+}
+
+// ===== 加载设置 =====
+function loadSettings() {
+    const savedKey = localStorage.getItem('nanoBananaProApiKey');
+    const savedModel = localStorage.getItem('nanoBananaProModel');
+
+    if (savedKey) {
+        AppState.apiKey = savedKey;
+        document.getElementById('apiKeyInput').value = savedKey;
+    }
+
+    if (savedModel) {
+        AppState.apiModel = savedModel;
+        document.getElementById('apiModelSelect').value = savedModel;
+    }
+}
+
+// ===== 事件监听器 =====
+function setupEventListeners() {
+    // 生成模式切换
+    document.querySelectorAll('[data-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            AppState.mode = btn.dataset.mode;
+        });
+    });
+
+    // 画幅比例选择
+    document.querySelectorAll('[data-ratio]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-ratio]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            AppState.aspectRatio = btn.dataset.ratio;
+            AppState.aspectSize = btn.dataset.size;
+        });
+    });
+
+    // 分辨率选择
+    document.querySelectorAll('[data-resolution]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-resolution]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            AppState.resolution = parseInt(btn.dataset.resolution);
+        });
+    });
+
+    // 参考图上传
+    document.querySelectorAll('.reference-slot').forEach(slot => {
+        slot.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-btn')) return;
+            const index = parseInt(slot.dataset.index);
+            selectReferenceImage(index);
+        });
+    });
+
+    const referenceImageInput = document.getElementById('referenceImageInput');
+    referenceImageInput.addEventListener('change', handleReferenceImageUpload);
+
+    // 粘贴功能
+    document.addEventListener('paste', handlePaste);
+
+    // 生成按钮
+    document.getElementById('generateBtn').addEventListener('click', generateImage);
+
+    // 设置按钮
+    document.getElementById('settingsBtn').addEventListener('click', openSettings);
+    document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
+    document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+
+    // 画布控制
+    document.getElementById('zoomInBtn').addEventListener('click', () => zoomCanvas(1.2));
+    document.getElementById('zoomOutBtn').addEventListener('click', () => zoomCanvas(0.8));
+    document.getElementById('resetViewBtn').addEventListener('click', resetCanvasView);
+    document.getElementById('clearCanvasBtn').addEventListener('click', clearCanvas);
+
+    // 工具切换
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const toolId = e.currentTarget.id;
+            switchTool(toolId);
+        });
+    });
+
+    // 导入图片
+    document.getElementById('importTool').addEventListener('click', () => {
+        document.getElementById('importImageInput').click();
+    });
+
+    document.getElementById('importImageInput').addEventListener('change', handleImportImages);
+
+    // 从画布选择图片
+    document.getElementById('selectCanvasImageBtn').addEventListener('click', selectFromCanvas);
+
+    // 模态框点击外部关闭
+    document.getElementById('settingsModal').addEventListener('click', (e) => {
+        if (e.target.id === 'settingsModal') {
+            closeSettings();
+        }
+    });
+}
+
+// ===== 初始化画布 =====
+function initCanvas() {
+    const canvas = document.getElementById('infiniteCanvas');
+    const container = document.getElementById('canvasContainer');
+
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+
+    const ctx = canvas.getContext('2d');
+
+    // 画布交互
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let draggedObject = null;
+
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (AppState.currentTool === 'pan') {
+            AppState.canvas.isPanning = true;
+            AppState.canvas.lastX = x;
+            AppState.canvas.lastY = y;
+            canvas.classList.add('grabbing');
+        } else if (AppState.currentTool === 'select') {
+            // 检查是否点击了某个对象
+            const clickedObject = findObjectAt(x, y);
+            if (clickedObject) {
+                isDragging = true;
+                dragStartX = x;
+                dragStartY = y;
+                draggedObject = clickedObject;
+                AppState.selectedObject = clickedObject;
+            } else {
+                AppState.selectedObject = null;
+            }
+            renderCanvas();
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (AppState.canvas.isPanning) {
+            const dx = x - AppState.canvas.lastX;
+            const dy = y - AppState.canvas.lastY;
+            AppState.canvas.offsetX += dx;
+            AppState.canvas.offsetY += dy;
+            AppState.canvas.lastX = x;
+            AppState.canvas.lastY = y;
+            renderCanvas();
+        } else if (isDragging && draggedObject) {
+            const dx = (x - dragStartX) / AppState.canvas.scale;
+            const dy = (y - dragStartY) / AppState.canvas.scale;
+            draggedObject.x += dx;
+            draggedObject.y += dy;
+            dragStartX = x;
+            dragStartY = y;
+            renderCanvas();
+        }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+        AppState.canvas.isPanning = false;
+        isDragging = false;
+        draggedObject = null;
+        canvas.classList.remove('grabbing');
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        zoomCanvas(delta);
+    });
+
+    // 窗口调整大小
+    window.addEventListener('resize', () => {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        renderCanvas();
+    });
+
+    renderCanvas();
+}
+
+// ===== 画布渲染 =====
+function renderCanvas() {
+    const canvas = document.getElementById('infiniteCanvas');
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(AppState.canvas.offsetX, AppState.canvas.offsetY);
+    ctx.scale(AppState.canvas.scale, AppState.canvas.scale);
+
+    // 渲染所有对象
+    AppState.canvasObjects.forEach(obj => {
+        if (obj.image) {
+            ctx.drawImage(obj.image, obj.x, obj.y, obj.width, obj.height);
+
+            // 高亮选中的对象
+            if (obj === AppState.selectedObject) {
+                ctx.strokeStyle = '#e94560';
+                ctx.lineWidth = 3 / AppState.canvas.scale;
+                ctx.strokeRect(obj.x, obj.y, obj.width, obj.height);
+            }
+        }
+    });
+
+    ctx.restore();
+
+    updateZoomInfo();
+}
+
+// ===== 查找点击的对象 =====
+function findObjectAt(x, y) {
+    // 转换屏幕坐标到画布坐标
+    const canvasX = (x - AppState.canvas.offsetX) / AppState.canvas.scale;
+    const canvasY = (y - AppState.canvas.offsetY) / AppState.canvas.scale;
+
+    // 从后往前查找(后添加的在上层)
+    for (let i = AppState.canvasObjects.length - 1; i >= 0; i--) {
+        const obj = AppState.canvasObjects[i];
+        if (canvasX >= obj.x && canvasX <= obj.x + obj.width &&
+            canvasY >= obj.y && canvasY <= obj.y + obj.height) {
+            return obj;
+        }
+    }
+    return null;
+}
+
+// ===== 画布缩放 =====
+function zoomCanvas(factor) {
+    AppState.canvas.scale *= factor;
+    AppState.canvas.scale = Math.max(0.1, Math.min(5, AppState.canvas.scale));
+    renderCanvas();
+}
+
+function resetCanvasView() {
+    AppState.canvas.scale = 1;
+    AppState.canvas.offsetX = 0;
+    AppState.canvas.offsetY = 0;
+    renderCanvas();
+}
+
+function updateZoomInfo() {
+    const zoomPercent = Math.round(AppState.canvas.scale * 100);
+    document.getElementById('zoomInfo').textContent = `${zoomPercent}%`;
+}
+
+// ===== 工具切换 =====
+function switchTool(toolId) {
+    document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(toolId).classList.add('active');
+
+    if (toolId === 'selectTool') {
+        AppState.currentTool = 'select';
+    } else if (toolId === 'panTool') {
+        AppState.currentTool = 'pan';
+    }
+}
+
+// ===== 清空画布 =====
+function clearCanvas() {
+    if (confirm('确定要清空画布吗？这将删除所有图像。')) {
+        AppState.canvasObjects = [];
+        AppState.selectedObject = null;
+        renderCanvas();
+        showNotification('画布已清空', 'success');
+    }
+}
+
+// ===== 参考图管理 =====
+let currentReferenceIndex = 0;
+
+function selectReferenceImage(index) {
+    currentReferenceIndex = index;
+    document.getElementById('referenceImageInput').click();
+}
+
+async function handleReferenceImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // 检查文件大小 (20MB = 20 * 1024 * 1024 bytes)
+    if (file.size > 20 * 1024 * 1024) {
+        showNotification('图片大小不能超过20MB', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        AppState.referenceImages[currentReferenceIndex] = event.target.result;
+        updateReferenceImagesUI();
+        showNotification('参考图已添加', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateReferenceImagesUI() {
+    const slots = document.querySelectorAll('.reference-slot');
+    slots.forEach((slot, index) => {
+        const imageData = AppState.referenceImages[index];
+        if (imageData) {
+            slot.innerHTML = `
+                <img src="${imageData}" alt="参考图${index + 1}">
+                <button class="remove-btn" onclick="removeReferenceImage(${index})">×</button>
+            `;
+        } else {
+            slot.innerHTML = '<span>+</span>';
+        }
+    });
+}
+
+function removeReferenceImage(index) {
+    AppState.referenceImages[index] = null;
+    updateReferenceImagesUI();
+    showNotification('参考图已移除', 'success');
+}
+
+// ===== 粘贴功能 =====
+async function handlePaste(e) {
+    const items = e.clipboardData.items;
+
+    for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+            e.preventDefault();
+            const blob = item.getAsFile();
+
+            // 检查文件大小
+            if (blob.size > 20 * 1024 * 1024) {
+                showNotification('图片大小不能超过20MB', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                // 找到第一个空的参考图位置
+                const emptyIndex = AppState.referenceImages.findIndex(img => !img);
+                if (emptyIndex !== -1 && emptyIndex < 5) {
+                    AppState.referenceImages[emptyIndex] = event.target.result;
+                    updateReferenceImagesUI();
+                    showNotification('已从剪贴板添加参考图', 'success');
+                } else {
+                    showNotification('参考图位置已满(最多5张)', 'warning');
+                }
+            };
+            reader.readAsDataURL(blob);
+            break;
+        }
+    }
+}
+
+// ===== 从画布选择图片 =====
+function selectFromCanvas() {
+    if (AppState.canvasObjects.length === 0) {
+        showNotification('画布上没有图片', 'warning');
+        return;
+    }
+
+    showNotification('请在画布上点击要选择的图片', 'info');
+
+    // 临时切换到选择模式
+    const originalTool = AppState.currentTool;
+    AppState.currentTool = 'select';
+
+    // 添加一次性点击监听器
+    const canvas = document.getElementById('infiniteCanvas');
+    const handleClick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const clickedObject = findObjectAt(x, y);
+        if (clickedObject && clickedObject.imageData) {
+            // 添加到参考图
+            const emptyIndex = AppState.referenceImages.findIndex(img => !img);
+            if (emptyIndex !== -1 && emptyIndex < 5) {
+                AppState.referenceImages[emptyIndex] = clickedObject.imageData;
+                updateReferenceImagesUI();
+                showNotification('已从画布添加参考图', 'success');
+            } else {
+                showNotification('参考图位置已满(最多5张)', 'warning');
+            }
+        }
+
+        // 恢复原来的工具
+        AppState.currentTool = originalTool;
+        canvas.removeEventListener('click', handleClick);
+    };
+
+    canvas.addEventListener('click', handleClick, { once: true });
+}
+
+// ===== 导入图片到画布 =====
+async function handleImportImages(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    for (let file of files) {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    // 添加到画布中心
+                    const canvas = document.getElementById('infiniteCanvas');
+                    const centerX = (canvas.width / 2 - AppState.canvas.offsetX) / AppState.canvas.scale;
+                    const centerY = (canvas.height / 2 - AppState.canvas.offsetY) / AppState.canvas.scale;
+
+                    AppState.canvasObjects.push({
+                        image: img,
+                        imageData: event.target.result,
+                        x: centerX - img.width / 2,
+                        y: centerY - img.height / 2,
+                        width: img.width,
+                        height: img.height,
+                        id: Date.now() + Math.random()
+                    });
+
+                    renderCanvas();
+                    showNotification('图片已添加到画布', 'success');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // 重置input
+    e.target.value = '';
+}
+
+// ===== 图像生成 =====
+async function generateImage() {
+    const prompt = document.getElementById('promptInput').value.trim();
+
+    if (!prompt) {
+        showNotification('请输入提示词', 'error');
+        return;
+    }
+
+    if (!AppState.apiKey) {
+        showNotification('请先配置 API Key', 'error');
+        openSettings();
+        return;
+    }
+
+    // 检查图生图模式是否有参考图
+    if (AppState.mode === 'image') {
+        const hasReferenceImage = AppState.referenceImages.some(img => img);
+        if (!hasReferenceImage) {
+            showNotification('图生图模式需要至少一张参考图', 'error');
+            return;
+        }
+    }
+
+    const btn = document.getElementById('generateBtn');
+    const btnText = document.getElementById('generateBtnText');
+
+    btn.disabled = true;
+    btnText.innerHTML = '生成中... <span class="loading"></span>';
+
+    try {
+        const imageDataUrl = await callGeminiImageAPI(prompt);
+
+        // 添加到画布
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.getElementById('infiniteCanvas');
+            const centerX = (canvas.width / 2 - AppState.canvas.offsetX) / AppState.canvas.scale;
+            const centerY = (canvas.height / 2 - AppState.canvas.offsetY) / AppState.canvas.scale;
+
+            AppState.canvasObjects.push({
+                image: img,
+                imageData: imageDataUrl,
+                x: centerX - img.width / 2,
+                y: centerY - img.height / 2,
+                width: img.width,
+                height: img.height,
+                id: Date.now()
+            });
+
+            renderCanvas();
+            showNotification('图片生成成功！', 'success');
+        };
+        img.src = imageDataUrl;
+
+    } catch (error) {
+        console.error('生成失败:', error);
+        showNotification('生成失败: ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btnText.innerHTML = '✨ 生成图像';
+    }
+}
+
+// ===== 调用 Gemini Image API =====
+async function callGeminiImageAPI(prompt) {
+    const [baseWidth, baseHeight] = AppState.aspectSize.split('x').map(Number);
+    const width = baseWidth * AppState.resolution;
+    const height = baseHeight * AppState.resolution;
+
+    // 构建请求体
+    const parts = [];
+
+    // 添加提示词
+    parts.push({ text: prompt });
+
+    // 如果是图生图模式，添加参考图
+    if (AppState.mode === 'image') {
+        const validReferenceImages = AppState.referenceImages.filter(img => img);
+        for (const imageData of validReferenceImages) {
+            // 提取 base64 数据
+            const base64Data = imageData.split(',')[1];
+            const mimeType = imageData.split(';')[0].split(':')[1];
+
+            parts.push({
+                inlineData: {
+                    mimeType: mimeType,
+                    data: base64Data
+                }
+            });
+        }
+    }
+
+    const requestBody = {
+        contents: [{
+            parts: parts
+        }],
+        generationConfig: {
+            responseModalities: ["Image"]
+        }
+    };
+
+    const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${AppState.apiModel}:generateContent`;
+
+    console.log('调用 API:', apiEndpoint);
+    console.log('请求配置:', { prompt, width, height, mode: AppState.mode });
+
+    const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': AppState.apiKey
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API 错误:', errorText);
+        throw new Error(`API 请求失败: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('API 响应:', data);
+
+    // 提取图片数据
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        const parts = data.candidates[0].content.parts;
+        for (const part of parts) {
+            if (part.inlineData && part.inlineData.data) {
+                const mimeType = part.inlineData.mimeType || 'image/png';
+                return `data:${mimeType};base64,${part.inlineData.data}`;
+            }
+        }
+    }
+
+    throw new Error('无法从响应中提取图片数据');
+}
+
+// ===== 设置管理 =====
+function openSettings() {
+    document.getElementById('settingsModal').classList.add('show');
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').classList.remove('show');
+}
+
+function saveSettings() {
+    const apiKey = document.getElementById('apiKeyInput').value.trim();
+    const apiModel = document.getElementById('apiModelSelect').value;
+
+    if (!apiKey) {
+        showNotification('请输入 API Key', 'error');
+        return;
+    }
+
+    AppState.apiKey = apiKey;
+    AppState.apiModel = apiModel;
+
+    localStorage.setItem('nanoBananaProApiKey', apiKey);
+    localStorage.setItem('nanoBananaProModel', apiModel);
+
+    showNotification('设置已保存', 'success');
+    closeSettings();
+}
+
+// ===== 通知 =====
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideIn 0.3s ease-out reverse';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+    </script>
+</body>
+</html>
